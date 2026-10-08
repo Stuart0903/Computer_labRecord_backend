@@ -1,7 +1,7 @@
 import prisma from '../lib/prisma.js';
 import { generateStudentId } from '../utils/studentId.js';
 import { createError } from '../middleware/error.js';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/index.js';
 
 export async function listStudents(filters: {
   class?: number;

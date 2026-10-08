@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/index.js';
 
 export async function getDashboardStats(filters: { class?: number; section?: string }) {
   const studentWhere: Prisma.StudentWhereInput = {};

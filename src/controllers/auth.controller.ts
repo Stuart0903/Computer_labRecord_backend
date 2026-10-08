@@ -13,13 +13,20 @@ const loginSchema = z.object({
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+function getCookieOptions() {
+  const isProd = env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as const;
+}
+
 function setTokenCookie(res: Response, token: string) {
   res.cookie(env.COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getCookieOptions(),
     maxAge: SEVEN_DAYS_MS,
-    path: '/',
   });
 }
 
@@ -33,12 +40,11 @@ export const login = asyncHandler(async (req: Request, res: Response, _next: Nex
   const result = await authService.login(username, password);
 
   setTokenCookie(res, result.token);
-
   res.json({ teacher: result.teacher });
 });
 
 export const logout = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-  res.clearCookie(env.COOKIE_NAME, { path: '/' });
+  res.clearCookie(env.COOKIE_NAME, getCookieOptions());
   res.json({ success: true });
 });
 

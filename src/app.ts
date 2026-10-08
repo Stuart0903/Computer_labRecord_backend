@@ -4,14 +4,14 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
 import cookieParser from "cookie-parser";
-import { errorHandler } from "./middleware/error";
-import routes from "./routes/index"
+import { errorHandler } from "./middleware/error.js";
+import routes from "./routes/index.js"
 
 export const app = express();
 
 
 // 1. Security & Utility Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: env.FRONTEND_URL,
   credentials: true,

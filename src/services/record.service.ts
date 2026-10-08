@@ -1,4 +1,4 @@
-import prisma from '../lib/prisma';
+import prisma from '../lib/prisma.js';
 import { createError } from '../middleware/error.js';
 import { Prisma } from '../../generated/prisma/index.js';
 

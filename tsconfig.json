@@ -13,8 +13,6 @@
     "declaration": true,
     "sourceMap": true,
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

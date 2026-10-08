@@ -1,4 +1,4 @@
-import prisma from '../lib/prisma';
+import prisma from '../lib/prisma.js';
 import { comparePassword } from '../utils/password.js';
 import { signToken } from '../utils/jwt.js';
 import { createError } from '../middleware/error.js';

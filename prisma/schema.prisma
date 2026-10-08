@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Teacher {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions LabSession[]
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  studentId String   @unique
+  name      String
+  class     Int
+  section   String
+  rollNo    Int
+  notes     String?
+  parentPin String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  labRecords LabRecord[]
+
+  @@index([class, section])
+  @@index([studentId])
+}
+
+model LabSession {
+  id                String   @id @default(cuid())
+  date              DateTime
+  class             Int
+  section           String
+  topic             String
+  activity          String   @default("")
+  learned           String?
+  materialsRequired String?
+  teacherId         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  labRecords LabRecord[]
+
+  @@index([class, section])
+  @@index([date])
+  @@index([teacherId])
+}
+
+model LabRecord {
+  id               String   @id @default(cuid())
+  sessionId        String
+  studentId        String
+  rollNo           Int
+  taskStatus       String   @default("Completed")
+  materialsBrought Json?
+  remarks          String?
+  verified         String   @default("Pending")
+  attendance       String   @default("Present")
+  marks            Int?
+  maxMarks         Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  session LabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student    @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([taskStatus])
+  @@index([attendance])
+}

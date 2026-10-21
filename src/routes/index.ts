@@ -17,6 +17,6 @@ router.use('/students', requireAuth, studentsRoutes);
 router.use('/sessions', requireAuth, sessionsRoutes);
 router.use('/records', requireAuth, recordsRoutes);
 router.use('/stats', requireAuth, statsRoutes);
-router.use('/parent', requireAuth, parentRoutes);
+router.use('/parent', parentRoutes);
 
 export default router;

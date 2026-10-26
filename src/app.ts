@@ -9,6 +9,10 @@ import routes from "./routes/index.js"
 
 export const app = express();
 
+// Trust proxy so req.ip reflects the real client IP when behind the
+// Next.js dev proxy / nginx / any reverse proxy. Required for the
+// IP-keyed rate limiters in middleware/rateLimit.ts to work correctly.
+app.set('trust proxy', 1);
 
 // 1. Security & Utility Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

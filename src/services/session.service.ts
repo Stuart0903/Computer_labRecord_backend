@@ -64,7 +64,9 @@ export async function createSession(data: {
         sessionId: session.id,
         studentId: student.studentId,
         rollNo: student.rollNo,
-        taskStatus: 'Completed',
+        // Default to 'Not Completed' so the teacher must explicitly mark
+        // each student's task status when marking attendance.
+        taskStatus: 'Not Completed',
         attendance: 'Present',
         verified: 'Pending',
         materialsBrought: materialsBrought as any,

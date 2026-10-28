@@ -14,7 +14,8 @@ export async function listRecords(filters: {
   dateTo?: string;
   search?: string;
   limit?: number;
-}) {
+  offset?: number;
+}): Promise<{ records: any[]; total: number }> {
   const where: Prisma.LabRecordWhereInput = {};
 
   if (filters.sessionId) where.sessionId = filters.sessionId;
@@ -43,20 +44,29 @@ export async function listRecords(filters: {
     ];
   }
 
-  const limit = filters.limit || 200;
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
 
-  return prisma.labRecord.findMany({
-    where,
-    include: {
-      student: { select: { studentId: true, name: true, class: true, section: true, rollNo: true } },
-      session: { select: { id: true, date: true, topic: true, activity: true, learned: true, materialsRequired: true, class: true, section: true } },
-    },
-    orderBy: [
-      { session: { date: 'desc' } },
-      { rollNo: 'asc' },
-    ],
-    take: limit,
-  });
+  // Run the find-many and the count in parallel so we get both the page
+  // of records AND the total count (for pagination UI) in one round-trip.
+  const [records, total] = await Promise.all([
+    prisma.labRecord.findMany({
+      where,
+      include: {
+        student: { select: { studentId: true, name: true, class: true, section: true, rollNo: true } },
+        session: { select: { id: true, date: true, topic: true, activity: true, learned: true, materialsRequired: true, class: true, section: true } },
+      },
+      orderBy: [
+        { session: { date: 'desc' } },
+        { rollNo: 'asc' },
+      ],
+      skip: offset,
+      take: limit,
+    }),
+    prisma.labRecord.count({ where }),
+  ]);
+
+  return { records, total };
 }
 
 export async function updateRecord(

@@ -59,11 +59,12 @@ export const listRecords = asyncHandler(async (req: Request, res: Response, _nex
     dateFrom: req.query.dateFrom ? String(req.query.dateFrom) : undefined,
     dateTo: req.query.dateTo ? String(req.query.dateTo) : undefined,
     search: req.query.search ? String(req.query.search) : undefined,
-    limit: req.query.limit ? Number(req.query.limit) : undefined,
+    limit: req.query.limit ? Number(req.query.limit) : 50,
+    offset: req.query.offset ? Number(req.query.offset) : 0,
   };
 
-  const records = await recordService.listRecords(filters);
-  res.json(records);
+  const result = await recordService.listRecords(filters);
+  res.json(result);
 });
 
 export const updateRecord = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {

@@ -31,7 +31,7 @@ export async function login(username: string, password: string) {
 export async function getMe(teacherId: string) {
   const teacher = await prisma.teacher.findUnique({
     where: { id: teacherId },
-    select: { id: true, username: true, name: true },
+    select: { id: true, username: true, name: true, activeSessionId: true },
   });
 
   if (!teacher) {
@@ -39,6 +39,26 @@ export async function getMe(teacherId: string) {
   }
 
   return teacher;
+}
+
+/**
+ * Clear the teacher's activeSessionId. Called when the teacher clicks
+ * "End Session" on the frontend. The session itself is NOT deleted —
+ * it remains in the database and is still visible on /sessions and /records.
+ * Only the teacher's "I'm currently working on this session" flag is cleared.
+ *
+ * Returns the updated teacher (with activeSessionId: null) so the frontend
+ * can update its state.
+ */
+export async function endActiveSession(teacherId: string) {
+  const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+  if (!teacher) throw createError(404, 'Teacher not found');
+
+  return prisma.teacher.update({
+    where: { id: teacherId },
+    data: { activeSessionId: null },
+    select: { id: true, username: true, name: true, activeSessionId: true },
+  });
 }
 
 export async function changePassword(teacherId: string, currentPassword: string, newPassword: string) {

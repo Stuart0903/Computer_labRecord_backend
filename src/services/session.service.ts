@@ -74,6 +74,15 @@ export async function createSession(data: {
     });
   }
 
+  // Mark this session as the teacher's currently-active session.
+  // This is what enables cross-device sync — when the teacher opens the
+  // app on their mobile, /auth/me returns this ID and the frontend
+  // automatically restores the session. Cleared by DELETE /auth/active-session.
+  await prisma.teacher.update({
+    where: { id: data.teacherId },
+    data: { activeSessionId: session.id },
+  });
+
   return prisma.labSession.findUnique({
     where: { id: session.id },
     include: {

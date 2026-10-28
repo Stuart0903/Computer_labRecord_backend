@@ -54,6 +54,18 @@ export const me = asyncHandler(async (req: Request, res: Response, _next: NextFu
   res.json(teacher);
 });
 
+/**
+ * DELETE /auth/active-session
+ * Clears the teacher's activeSessionId (the "I'm currently working on
+ * this session" flag). Called by the frontend when the teacher clicks
+ * "End Session" on /new-session. The session itself is NOT deleted.
+ */
+export const endActiveSession = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  const teacherReq = req as AuthenticatedRequest;
+  const teacher = await authService.endActiveSession(teacherReq.teacher.id);
+  res.json(teacher);
+});
+
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(6, 'New password must be at least 6 characters'),

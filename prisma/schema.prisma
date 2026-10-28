@@ -15,6 +15,15 @@ model Teacher {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // The session the teacher is currently marking attendance for.
+  // Set automatically when the teacher creates a new session.
+  // Cleared when the teacher clicks "End Session" on the frontend
+  // (which calls DELETE /auth/active-session).
+  // Allows the active session to follow the teacher across devices
+  // (desktop ↔ mobile), since it's stored in the database, not localStorage.
+  activeSessionId String?
+  activeSession   LabSession? @relation("ActiveSessionForTeacher", fields: [activeSessionId], references: [id], onDelete: SetNull)
+
   sessions LabSession[]
 }
 
@@ -51,6 +60,10 @@ model LabSession {
 
   teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   labRecords LabRecord[]
+
+  // Reverse side of the "ActiveSessionForTeacher" relation — teachers
+  // who have this session marked as their currently-active session.
+  activeForTeachers Teacher[] @relation("ActiveSessionForTeacher")
 
   @@index([class, section])
   @@index([date])

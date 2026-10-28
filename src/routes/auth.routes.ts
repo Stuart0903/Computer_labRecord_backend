@@ -9,5 +9,6 @@ router.post('/login', loginRateLimiter, authController.login);
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.me);
 router.patch('/password', requireAuth, authController.changePassword);
+router.delete('/active-session', requireAuth, authController.endActiveSession);
 
 export default router;

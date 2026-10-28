@@ -108,3 +108,133 @@ export async function deleteSession(id: string) {
   await prisma.labSession.delete({ where: { id } });
   return { success: true };
 }
+
+/**
+ * Update an existing session. Only allows editing date / topic / activity /
+ * learned / materialsRequired. Class and section are NOT editable —
+ * changing them would orphan records (the records' studentIds belong to
+ * the original class-section's students, not the new one). If you really
+ * need to change class/section, delete this session and create a new one.
+ *
+ * Note: editing `materialsRequired` does NOT retroactively update the
+ * `materialsBrought` JSON on existing records. New materials added via
+ * edit will be treated as "unknown" (undefined, shown as "—") on existing
+ * records until the teacher manually toggles them on the records page.
+ * Removed materials will simply disappear from the table. This is
+ * intentional — we don't want to silently reset student attendance flags.
+ */
+export async function updateSession(
+  id: string,
+  data: {
+    date?: string;
+    topic?: string;
+    activity?: string;
+    learned?: string | null;
+    materialsRequired?: string | null;
+  }
+) {
+  const session = await prisma.labSession.findUnique({ where: { id } });
+  if (!session) throw createError(404, 'Session not found');
+
+  const updateData: Prisma.LabSessionUpdateInput = {};
+  if (data.date !== undefined) updateData.date = new Date(data.date);
+  if (data.topic !== undefined) updateData.topic = data.topic;
+  if (data.activity !== undefined) updateData.activity = data.activity;
+  if (data.learned !== undefined) updateData.learned = data.learned;
+  if (data.materialsRequired !== undefined) updateData.materialsRequired = data.materialsRequired;
+
+  return prisma.labSession.update({
+    where: { id },
+    data: updateData,
+    include: {
+      teacher: { select: { id: true, name: true, username: true } },
+      _count: { select: { labRecords: true } },
+    },
+  });
+}
+
+/**
+ * List sessions with per-session stats (studentCount, presentCount,
+ * verifiedCount, completedCount) and optional pagination + search.
+ *
+ * Used by the /sessions (Manage Sessions) frontend page.
+ * The lightweight /sessions endpoint (without stats) is still used by
+ * the /records filter dropdown where stats aren't needed.
+ */
+export async function listSessionsWithStats(filters: {
+  class?: number;
+  section?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{
+  sessions: Array<{
+    id: string;
+    date: Date;
+    class: number;
+    section: string;
+    topic: string;
+    activity: string;
+    learned: string | null;
+    materialsRequired: string | null;
+    teacher: { id: string; name: string; username: string };
+    studentCount: number;
+    presentCount: number;
+    verifiedCount: number;
+    completedCount: number;
+  }>;
+  total: number;
+}> {
+  const where: Prisma.LabSessionWhereInput = {};
+  if (filters.class) where.class = filters.class;
+  if (filters.section) where.section = filters.section;
+  if (filters.search) {
+    where.OR = [
+      { topic: { contains: filters.search, mode: 'insensitive' } },
+      { activity: { contains: filters.search, mode: 'insensitive' } },
+      { learned: { contains: filters.search, mode: 'insensitive' } },
+    ];
+  }
+
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
+
+  const [sessions, total] = await Promise.all([
+    prisma.labSession.findMany({
+      where,
+      include: {
+        teacher: { select: { id: true, name: true, username: true } },
+        labRecords: {
+          select: {
+            attendance: true,
+            verified: true,
+            taskStatus: true,
+          },
+        },
+      },
+      orderBy: { date: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+    prisma.labSession.count({ where }),
+  ]);
+
+  return {
+    total,
+    sessions: sessions.map((s) => ({
+      id: s.id,
+      date: s.date,
+      class: s.class,
+      section: s.section,
+      topic: s.topic,
+      activity: s.activity,
+      learned: s.learned,
+      materialsRequired: s.materialsRequired,
+      teacher: s.teacher,
+      studentCount: s.labRecords.length,
+      presentCount: s.labRecords.filter((r) => r.attendance === 'Present').length,
+      verifiedCount: s.labRecords.filter((r) => r.verified === 'Verified').length,
+      completedCount: s.labRecords.filter((r) => r.taskStatus === 'Completed').length,
+    })),
+  };
+}
